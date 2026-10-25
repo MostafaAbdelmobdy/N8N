@@ -1,0 +1,840 @@
+{
+  "name": "Shorts Daily Agent (n8n Cloud)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## BOMBO || بومبو  daily Shorts agent (n8n Cloud)\nGemini writes an episode (Egyptian Arabic, per-character lines) > JSON2Video draws every scene with AI (semi-realistic 3D cats in luxury interiors), voices each character with Azure Arabic voices, burns Arabic captions > YouTube upload > Telegram report.\n\n**Edit in Config:** characters (looks + voices), stylePrompt, themes, outro line, privacy, madeForKids.\n**Test first:** privacy = private, click Execute workflow, check the video in YouTube Studio, then Activate.\n**Set Error Workflow:** Workflow settings > Error workflow > this workflow.",
+        "height": 272,
+        "width": 996
+      },
+      "id": "952e9d42-ce4e-4e05-8f3b-c7fc107a71e8",
+      "name": "Setup Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        32,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 15 * * *"
+            }
+          ]
+        }
+      },
+      "id": "a7eef076-b226-4ec6-9d6b-1d3199948347",
+      "name": "Daily 3PM Cairo",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6529ff10-bda0-45e1-84d1-bfdae3642bdd",
+              "name": "model",
+              "value": "gemini-flash-latest",
+              "type": "string"
+            },
+            {
+              "id": "ac35fb3f-a02d-416c-83f9-b546be5acd9b",
+              "name": "imageModel",
+              "value": "flux-schnell",
+              "type": "string"
+            },
+            {
+              "id": "efc125c9-120b-4ac3-99eb-be508adb5174",
+              "name": "stylePrompt",
+              "value": "Ultra-detailed semi-realistic 3D animation, Pixar quality, cats with realistic soft fur and expressive human-like faces acting like people, elegant human clothing, cinematic soft lighting, luxurious photorealistic interior, shallow depth of field, rich warm colors",
+              "type": "string"
+            },
+            {
+              "id": "05bb4b92-86cf-47a3-8ee6-b9c4b43929bb",
+              "name": "charactersJson",
+              "value": "[{\"name\": \"Bombo\", \"voice\": \"ar-EG-ShakirNeural\", \"look\": \"Bombo, a sleek black British shorthair cat with glossy black fur and round yellow-green eyes, standing upright like a person, wearing a black tuxedo with a white shirt, a black bow tie and a white pocket square\", \"trait\": \"confident, dramatic, secretly clumsy, big-hearted butler-like gentleman\"}, {\"name\": \"Lolo\", \"voice\": \"ar-EG-SalmaNeural\", \"look\": \"Lolo, an elegant white Siamese-style cat princess with cream-white fur, a soft gray face mask, bright blue eyes, standing upright like a person, wearing a golden jeweled tiara, a pearl necklace and a green brocade Victorian gown with gold embroidery\", \"trait\": \"smart, kind, brave, a little sassy\"}, {\"name\": \"Pinky\", \"voice\": \"ar-AE-FatimaNeural\", \"look\": \"Pinky, a fluffy gray British longhair cat with round yellow-green eyes, standing upright like a person, wearing a pink lace shawl, a pearl necklace and a light-blue lace dress\", \"trait\": \"sweet, curious, gossipy, always hungry\"}, {\"name\": \"Boss\", \"voice\": \"ar-SA-HamedNeural\", \"look\": \"Boss, a big dark-brown cat with black-rimmed glasses and green eyes, standing upright like a person, wearing a black suit and a black shirt\", \"trait\": \"strict, loud, short-tempered but secretly fair; use only in office or authority stories\"}, {\"name\": \"Ginger\", \"voice\": \"ar-AE-HamdanNeural\", \"look\": \"Ginger, a young orange tabby cat with big green eyes and a fluffy white chest, standing upright like a person\", \"trait\": \"anxious, funny, always in trouble, lovable; use only in office or mishap stories\"}, {\"name\": \"Narrator\", \"voice\": \"ar-SA-ZariyahNeural\", \"look\": \"\", \"trait\": \"warm storyteller, used rarely\"}]",
+              "type": "string"
+            },
+            {
+              "id": "a8be4214-8019-4ec1-8a46-0a6f54bebc63",
+              "name": "themes",
+              "value": "an elegant afternoon tea party where gossip causes a funny misunderstanding|a behind-the-scenes photo shoot on a theatre stage that goes hilariously wrong|the strict Boss scolds Ginger for a mistake, then everyone discovers it was not his fault|Bombo tries to impress Lolo with a fancy dinner but everything goes wrong|a missing royal jewel and a funny culprit in the Victorian salon|Pinky spreads a rumor and the friends must fix it before the grand party|a surprise birthday party for Lolo that almost gets ruined|Bombo is afraid of something silly and learns courage|a piano concert where the music keeps getting interrupted|a luxury penthouse mix-up: the wrong guest, the wrong gift, a very funny night|friends compete in a cooking contest in the grand kitchen|a mysterious letter arrives at the castle and sends the friends on an adventure",
+              "type": "string"
+            },
+            {
+              "id": "2e8b9bdf-f670-40a3-aa2b-cd05b2fda35f",
+              "name": "outroSpeaker",
+              "value": "Bombo",
+              "type": "string"
+            },
+            {
+              "id": "8d26365f-e57c-45cf-9401-1eff20e39423",
+              "name": "outroLine",
+              "value": "لو عجبتكم الحكاية، اشتركوا في قناة بومبو وفعّلوا الجرس عشان تشوفوا مغامرة جديدة كل يوم!",
+              "type": "string"
+            },
+            {
+              "id": "8a614c8d-f21f-48b2-96fb-8e487e01b0ad",
+              "name": "descFooter",
+              "value": "🐱 اشتركوا في قناة BOMBO || بومبو لمتابعة مغامرات بومبو ولولو كل يوم!\n#بومبو #BOMBO #قطط #كرتون #Shorts",
+              "type": "string"
+            },
+            {
+              "id": "451fd932-2449-483c-a613-ae37173e990a",
+              "name": "musicUrl",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "28270f15-05eb-4e9f-9141-4c8768c6e8d3",
+              "name": "privacy",
+              "value": "private",
+              "type": "string"
+            },
+            {
+              "id": "d06cf32a-1c89-4086-8606-761ffd202112",
+              "name": "categoryId",
+              "value": "24",
+              "type": "string"
+            },
+            {
+              "id": "a41c9b8f-5d91-4061-98dd-91980c24defb",
+              "name": "madeForKids",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "ab353c45-ee3c-4ed0-9c09-4f8cd58daf9d",
+              "name": "syntheticFlag",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "b3bba59c-7c7f-4865-a472-d36f5d96e1e5",
+              "name": "sceneCount",
+              "value": 6,
+              "type": "number"
+            },
+            {
+              "id": "6ed8d9bb-a218-4dfe-bb15-cf78eb63ff57",
+              "name": "minWords",
+              "value": 50,
+              "type": "number"
+            },
+            {
+              "id": "060637be-ce13-4906-a0bd-646813647861",
+              "name": "maxWords",
+              "value": 65,
+              "type": "number"
+            },
+            {
+              "id": "3e56b5ca-91bd-4135-890c-598b87f6f437",
+              "name": "forceRun",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1b990048-7f2d-40ce-ac56-3488b18aa151",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        288,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst c = $input.first().json;\nconst today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });\nif (!c.forceRun && sd.uploadingDay === today) {\n  // An upload was already started today (maybe failed). Never auto-retry: avoids duplicate videos.\n  return [];\n}\nsd.attempts = 0;\nsd.feedback = '';\nsd.polls = 0;\nreturn $input.all();"
+      },
+      "id": "d387db90-12ad-4f1f-ac5e-85e1fb145de0",
+      "name": "Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst c = $('Config').first().json;\nsd.attempts = (sd.attempts || 0) + 1;\nif (sd.attempts > 3) throw new Error('Quality gate failed 3 times. Last problem: ' + (sd.feedback || 'unknown'));\nconst chars = JSON.parse(c.charactersJson);\nconst themes = String(c.themes).split('|').map((s) => s.trim()).filter(Boolean);\nif (!sd.theme || sd.attempts === 1) sd.theme = themes[Math.floor(Math.random() * themes.length)];\nconst past = (sd.titles || []).slice(-40);\nconst cast = chars.map((x) => '- ' + x.name + ': ' + x.trait).join('\\n');\nconst prompt = `You are the head writer of \"BOMBO || بومبو\", a hit Arabic YouTube Shorts cartoon channel about talking cats. Channel promise: friendship, laughter, adventures.\nWrite ONE brand-new, self-contained episode that runs 60-90 seconds when spoken. All spoken lines are in Egyptian Arabic dialect (عامية مصرية), written in Arabic script.\n\nCAST (use only these exact names as speakers):\n${cast}\n\nTODAY'S THEME: ${sd.theme}\nDo NOT repeat or resemble these past episodes: ${JSON.stringify(past)}\n${sd.feedback || ''}\n\nRULES\n- The very first line must hook the viewer within 3 seconds: a shout, a funny problem, or a surprising situation.\n- Structure: hook, problem, 2-3 escalating funny attempts, a twist, a warm friendly ending. Do NOT write a subscribe call-to-action; it is added automatically.\n- Write ${c.sceneCount} scenes. Each scene is one camera shot with 1 or 2 spoken lines. Each line is at most 16 words, punchy, mostly dialogue between the characters. Use the Narrator rarely.\n- Total spoken words across all lines must be between ${c.minWords} and ${c.maxWords}.\n- Child-friendly: no violence, nothing scary, no real brands or real people.\n- Spoken text: Arabic only, no emojis, no stage directions, write numbers as words.\n- image_prompt is in ENGLISH and describes only the setting, camera angle, action, emotions and props of that shot (choose luxurious, realistic settings such as: a Victorian salon with chandeliers and a grand piano, an elegant tea table with a porcelain tea set, a modern marble penthouse living room, a theatre stage with purple velvet curtains and ring lights, a grand dining hall, a palace garden, a royal kitchen, an upscale office). Do NOT describe the cats' fur or clothes: their looks are added automatically.\n- characters lists the cast names visible in that shot.\n\nReturn ONLY valid JSON in exactly this shape:\n{\"title\":\"Arabic title, max 60 characters, one fitting emoji, ending with ' | BOMBO'\",\"description\":\"two short Arabic sentences\",\"tags\":[\"8 to 12 Arabic and English keywords\"],\"scenes\":[{\"image_prompt\":\"...\",\"characters\":[\"Bombo\",\"Lolo\"],\"lines\":[{\"speaker\":\"Bombo\",\"text\":\"...\"}]}]}`;\nreturn [{ json: { requestBody: { contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 1 } } } }];"
+      },
+      "id": "89f6fe42-ce14-4e27-8510-ecfd73adb732",
+      "name": "Build Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $('Config').first().json.model }}:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.requestBody) }}",
+        "options": {}
+      },
+      "id": "1ea08976-06cd-4690-927a-6e672b33399d",
+      "name": "Gemini Writes Episode",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        944,
+        304
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "tkZHhRjzKVeqGKEc",
+          "name": "Query Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst c = $('Config').first().json;\nconst chars = JSON.parse(c.charactersJson);\nconst byName = {};\nchars.forEach((x) => { byName[x.name.toLowerCase()] = x; });\nconst fail = (msg) => {\n  sd.feedback = 'PREVIOUS ATTEMPT REJECTED: ' + msg + '. Fix exactly this.';\n  return [{ json: { ok: false, reason: msg } }];\n};\nlet pkg;\ntry {\n  const parts = $input.first().json.candidates[0].content.parts;\n  const t = parts.map((p) => p.text || '').join('').trim();\n  pkg = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1));\n} catch (e) { return fail('output was not valid JSON'); }\nif (!pkg.title || !pkg.description || !Array.isArray(pkg.tags) || !Array.isArray(pkg.scenes)) return fail('missing title, description, tags or scenes');\nif (pkg.scenes.length < 6 || pkg.scenes.length > 12) return fail('need 6 to 12 scenes, got ' + pkg.scenes.length);\nlet words = 0;\nfor (let i = 0; i < pkg.scenes.length; i++) {\n  const s = pkg.scenes[i];\n  if (!s.image_prompt || !Array.isArray(s.lines) || !s.lines.length) return fail('scene ' + (i + 1) + ' needs image_prompt and lines');\n  for (const l of s.lines) {\n    if (!l.text || !byName[String(l.speaker).toLowerCase()]) return fail('unknown speaker \"' + l.speaker + '\" in scene ' + (i + 1));\n    words += String(l.text).trim().split(/\\s+/).length;\n  }\n}\nif (words < c.minWords || words > c.maxWords) return fail('total spoken words were ' + words + ', must be between ' + c.minWords + ' and ' + c.maxWords);\nconst tok = (s) => new Set(String(s).toLowerCase().split(/[\\s,.;:!?\"'()|،؟\\-]+/).filter(Boolean));\nconst sim = (a, b) => { const A = tok(a), B = tok(b); let k = 0; A.forEach((x) => { if (B.has(x)) k++; }); return k / Math.max(1, A.size + B.size - k); };\nif ((sd.titles || []).some((p) => sim(pkg.title, p) > 0.6)) return fail('title too similar to a past episode');\n\nconst base = chars.find((x) => x.look);\nconst looksFor = (s) => {\n  let names = (s.characters || []).map((n) => String(n).toLowerCase());\n  if (!names.length) names = s.lines.map((l) => String(l.speaker).toLowerCase());\n   names = [...new Set(names)].filter((n) => byName[n] && byName[n].look).slice(0, 2);\n  const list = names.length ? names.map((n) => byName[n]) : [base];\n  return list.map((x) => x.look).join('. ');\n};\nconst frame = (action, looks) => ('Scene: ' + String(action).slice(0, 220) + '. ' + looks + '. ' + c.stylePrompt + '. Vertical 9:16, no text, no watermark').slice(0, 1000);\nconst mkScene = (prompt, text, voice, zoom, tag) => ({\n  comment: tag, duration: -1, 'background-color': '#111111',\n  elements: [\n    { type: 'image', model: c.imageModel, prompt, 'aspect-ratio': 'vertical', resize: 'cover', duration: -2, zoom },\n    { type: 'voice', text, model: 'azure', voice }\n  ]\n});\nconst scenes = [];\nlet n = 0;\npkg.scenes.forEach((s, i) => {\n  const prompt = frame(s.image_prompt, looksFor(s));\n  s.lines.forEach((l) => {\n    n++;\n    scenes.push(mkScene(prompt, String(l.text).trim(), byName[String(l.speaker).toLowerCase()].voice, n % 2 ? 3 : 2, 'scene ' + (i + 1)));\n  });\n});\nconst outroSpeaker = byName[String(c.outroSpeaker).toLowerCase()] || base;\nscenes.push(mkScene(\n  frame('Bombo and Lolo smiling and waving happily at the camera in an elegant Victorian salon with chandeliers, warm cheerful mood', byName['bombo'] && byName['lolo'] ? byName['bombo'].look + '. ' + byName['lolo'].look : base.look),\n  c.outroLine, outroSpeaker.voice, 3, 'outro'));\n\nconst movieElements = [{\n  type: 'subtitles', language: 'ar',\n  settings: { style: 'classic', 'font-family': 'Cairo', 'font-size': 70, 'word-color': '#FFD700', 'line-color': '#FFFFFF', 'outline-color': '#000000', 'outline-width': 4, position: 'bottom-center' }\n}];\nif (c.musicUrl && String(c.musicUrl).startsWith('http')) movieElements.push({ type: 'audio', src: c.musicUrl, volume: 0.12, loop: -1, duration: -2 });\nconst payload = { resolution: 'instagram-story', quality: 'high', scenes, elements: movieElements };\n\nlet title = String(pkg.title).trim().slice(0, 70);\nif (!/bombo/i.test(title)) title += ' | BOMBO';\nconst tags = [...new Set([...pkg.tags, 'بومبو', 'BOMBO', 'قطط', 'كرتون', 'shorts'])].slice(0, 15);\nconst description = String(pkg.description).trim() + '\\n\\n' + c.descFooter;\nsd.attempts = 0;\nsd.feedback = '';\nreturn [{ json: { ok: true, words, pkg: { title, description, tags }, payload } }];"
+      },
+      "id": "b16fd159-c79f-4fd8-be1e-c20858b9b279",
+      "name": "Quality Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cfb8342e-d0de-4966-b0c1-95275dab803a",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7e6f2408-df26-4e43-943f-5742e29cd047",
+      "name": "Gate OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1392,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.json2video.com/v2/movies",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": {}
+      },
+      "id": "59b1c977-b461-406d-ac40-9077970ca779",
+      "name": "Start Render",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1600,
+        224
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "PzgxvqU3BMaWVbb4",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 75
+      },
+      "id": "1f6f7229-e6ad-4ee9-ba80-bb1a4bf6efeb",
+      "name": "Wait 75s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1824,
+        224
+      ],
+      "webhookId": "a903a5e9-ddbf-4bf4-8046-b325a47b1bfb"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.json2video.com/v2/movies?project={{ $('Start Render').first().json.project }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "a78e6996-cc01-4d9e-ae9c-fa98e78aa4db",
+      "name": "Check Render",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2048,
+        224
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "PzgxvqU3BMaWVbb4",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst start = $('Start Render').first().json;\nif (!start.project) throw new Error('JSON2Video did not start the render: ' + JSON.stringify(start).slice(0, 300));\nconst m = $input.first().json.movie || {};\nsd.polls = (sd.polls || 0) + 1;\nif (m.status === 'error') throw new Error('JSON2Video render failed: ' + (m.message || 'unknown'));\nif (m.status !== 'done' && sd.polls > 30) throw new Error('Render timed out after ' + sd.polls + ' checks');\nif (m.status === 'done' && !m.url) throw new Error('Render finished without a URL');\nreturn [{ json: { done: m.status === 'done', status: m.status, url: m.url || null, duration: m.duration || null } }];"
+      },
+      "id": "430adede-3d7e-4b17-8fb3-a17d53a92a8b",
+      "name": "Evaluate Render",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "dd6892e6-8bde-4f7e-9980-f6bccc618979",
+              "leftValue": "={{ $json.done }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "be15a76a-8017-4728-9ac5-0211b753dc1e",
+      "name": "Render Done?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2480,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "43017b6c-7e89-4838-977a-bd34735fc751",
+      "name": "Download Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2704,
+        144
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nsd.uploadingDay = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });\nreturn $input.all();"
+      },
+      "id": "711da549-44c1-48b6-904b-a0cf34393965",
+      "name": "Mark Uploading",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2928,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Quality Gate').last().json.pkg.title + ' #Shorts' }}",
+        "regionCode": "US",
+        "categoryId": "={{ $('Config').first().json.categoryId }}",
+        "options": {
+          "description": "={{ $('Quality Gate').last().json.pkg.description + '\\n#Shorts' }}",
+          "privacyStatus": "={{ $('Config').first().json.privacy }}",
+          "selfDeclaredMadeForKids": "={{ $('Config').first().json.madeForKids }}",
+          "tags": "={{ $('Quality Gate').last().json.pkg.tags.join(',') }}"
+        }
+      },
+      "id": "f8a41638-a4d7-47f3-8816-9ba0b8adb184",
+      "name": "YouTube Upload",
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        3152,
+        144
+      ],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "8QoUIdW1f2r11TYd",
+          "name": "YouTube account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://www.googleapis.com/youtube/v3/videos?part=status",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "youTubeOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ id: $json.id || $json.uploadId, status: { privacyStatus: $('Config').first().json.privacy, selfDeclaredMadeForKids: $('Config').first().json.madeForKids, containsSyntheticMedia: $('Config').first().json.syntheticFlag } }) }}",
+        "options": {}
+      },
+      "id": "a3ff4cda-50f2-4a02-bf7b-12729c1d14f8",
+      "name": "Set Flags",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3360,
+        144
+      ],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "8QoUIdW1f2r11TYd",
+          "name": "YouTube account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst pkg = $('Quality Gate').last().json.pkg;\nconst yt = $('YouTube Upload').first().json;\nconst id = yt.id || yt.uploadId;\nsd.titles = [...(sd.titles || []), pkg.title].slice(-60);\nsd.polls = 0;\nreturn [{ json: { id, title: pkg.title, url: 'https://youtube.com/shorts/' + id } }];"
+      },
+      "id": "10c2742d-50b8-4c19-b3d0-5b5555d25964",
+      "name": "Save State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3584,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "7714106732",
+        "text": "={{ '✅ BOMBO Short uploaded (' + $('Config').first().json.privacy + '): ' + $json.title + '\\n' + $json.url + '\\nlength: ' + Math.round($('Evaluate Render').last().json.duration || 0) + 's' }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "29a58e94-3083-49a4-a081-b4339d6faf88",
+      "name": "Telegram Success",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3808,
+        144
+      ],
+      "webhookId": "75da5dca-4cb2-4380-b0aa-141f9c1f9c71",
+      "credentials": {
+        "telegramApi": {
+          "id": "EBO3DSIo4SzsyTY1",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "bb0d03e9-b6cc-4ca0-a80c-45a268038b6f",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        64,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "7714106732",
+        "text": "={{ '❌ BOMBO run failed at \"' + $json.execution.lastNodeExecuted + '\": ' + $json.execution.error.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "08f82d7b-39e9-43a3-bffd-0ec4c34efffd",
+      "name": "Telegram Failure",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        608
+      ],
+      "webhookId": "caf186b9-0486-40a8-bd6a-85691d700baf",
+      "credentials": {
+        "telegramApi": {
+          "id": "EBO3DSIo4SzsyTY1",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 304,
+        "width": 4128,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        32,
+        128
+      ],
+      "id": "ddbf39bd-90d9-4f40-9d81-43fdf508cb0b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 176,
+        "width": 656,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        16,
+        576
+      ],
+      "id": "c94a66f8-c484-4d86-9033-c69ad6bf0509",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        512,
+        608
+      ],
+      "id": "abbda3ee-b6ec-47b0-837f-45c2e7d8cfef",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        4032,
+        144
+      ],
+      "id": "68446a24-3d72-4b9b-b209-01ba911ede66",
+      "name": "video uploaded"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily 3PM Cairo": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guard": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "Gemini Writes Episode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Writes Episode": {
+      "main": [
+        [
+          {
+            "node": "Quality Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quality Gate": {
+      "main": [
+        [
+          {
+            "node": "Gate OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Render": {
+      "main": [
+        [
+          {
+            "node": "Wait 75s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 75s": {
+      "main": [
+        [
+          {
+            "node": "Check Render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Render": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Render": {
+      "main": [
+        [
+          {
+            "node": "Render Done?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Video": {
+      "main": [
+        [
+          {
+            "node": "Mark Uploading",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Uploading": {
+      "main": [
+        [
+          {
+            "node": "YouTube Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube Upload": {
+      "main": [
+        [
+          {
+            "node": "Set Flags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Flags": {
+      "main": [
+        [
+          {
+            "node": "Save State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save State": {
+      "main": [
+        [
+          {
+            "node": "Telegram Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Telegram Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gate OK?": {
+      "main": [
+        [
+          {
+            "node": "Start Render",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Done?": {
+      "main": [
+        [
+          {
+            "node": "Download Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 75s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Failure": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Success": {
+      "main": [
+        [
+          {
+            "node": "video uploaded",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "8f6a9fe1-92f7-4b66-bf2b-be4c10f8264b",
+  "meta": {
+    "instanceId": "60cc8007be45046e43f1c581e26d315f4f6c01a209b4535c2581e0f902db5668"
+  },
+  "nodeGroups": [],
+  "id": "qnz6NKeRfVqV6QXu",
+  "tags": []
+}
