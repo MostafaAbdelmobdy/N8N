@@ -1,0 +1,457 @@
+{
+  "name": "Sales Report Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sales report",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a4086732-50bf-4c46-a745-8f9308353fad",
+      "name": "Report Request",
+      "webhookId": "8073fa09-0222-4ed5-807e-d0783434737f"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                5
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        176
+      ],
+      "id": "4fa738be-d66d-4553-bef5-ab4c90477834",
+      "name": "Every friday 8am"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5ecf8e0e-3ac4-4fa9-9016-3809bbe73425",
+              "name": "sendTo",
+              "value": "={{ $json.body?.email || 'mostafa100pwg@gmail.com' }}",
+              "type": "string"
+            },
+            {
+              "id": "9bbb91aa-c855-48aa-9775-53a02fc2f9fd",
+              "name": "days",
+              "value": "={{ Number($json.body?.days) || 30 }}",
+              "type": "string"
+            },
+            {
+              "id": "23ef05c1-ad8e-446e-9225-7628d4cfbb5b",
+              "name": "triggedBy",
+              "value": "={{ $json.body ? 'On-demand request (webhook)' : 'Weekly schedule' }} `",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        272,
+        64
+      ],
+      "id": "9283d8a3-3097-43b4-91f3-79883b304a22",
+      "name": "Report Setting"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cbb73b39-9a06-47f6-8ceb-e3d2e6067e18",
+              "leftValue": "={{ $json[\"Order Date\"] }}",
+              "rightValue": "={{ $today.minus({ days: $('Report Setting').first().json.days }) }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "afterOrEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        720,
+        64
+      ],
+      "id": "9447c47b-499b-4254-987b-d45533ead915",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "excel",
+        "options": {
+          "fileName": "=sales-report-{{ $now.toFormat('yyyy-MM-dd') }}.html"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1248,
+        64
+      ],
+      "id": "dc178ad7-d927-48c4-b35b-009fd084d319",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Pfp-PA6X_FesMGxYN6kx4tZBgfyk1vG-S6rAeFu3Gj4",
+          "mode": "list",
+          "cachedResultName": "Orders Sample Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Pfp-PA6X_FesMGxYN6kx4tZBgfyk1vG-S6rAeFu3Gj4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 809457423,
+          "mode": "list",
+          "cachedResultName": "Orders Sample Data.csv",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Pfp-PA6X_FesMGxYN6kx4tZBgfyk1vG-S6rAeFu3Gj4/edit#gid=809457423"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        496,
+        64
+      ],
+      "id": "e42141cc-478d-4b2b-8bc6-d060e11cdd57",
+      "name": "get order",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pYsU4OaieiWxdjhG",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const settings = $('Report Setting').first().json;\nconst orders = $input.all().map(item => item.json);\nconst num = value => Number(String(value ?? '').replace(/[^0-9.-]/g, '')) || 0;\n\nconst revenue = orders.reduce((sum, o) => sum + num(o.Total), 0);\nconst units = orders.reduce((sum, o) => sum + num(o.Quantity), 0);\n\nconst groupBy = column => Object.entries(\n  orders.reduce((totals, o) => {\n    totals[o[column]] = (totals[o[column]] || 0) + num(o.Total);\n    return totals;\n  }, {})\n)\n  .sort((a, b) => b[1] - a[1])\n  .map(([name, total]) => ({ name, total: Math.round(total), share: Math.round((total / revenue) * 100) }));\n\nconst dates = orders.map(o => new Date(o['Order Date'])).sort((a, b) => a - b);\nconst fmt = d => d.toISOString().slice(0, 10);\n\nreturn [{\n  json: {\n    days: settings.days,\n    from: fmt(dates[0]),\n    to: fmt(dates[dates.length - 1]),\n    orders: orders.length,\n    revenue: Math.round(revenue),\n    units,\n    averageOrder: Math.round(revenue / orders.length),\n    topProducts: groupBy('Product').slice(0, 5),\n    byRegion: groupBy('Region'),\n    byChannel: groupBy('Channel'),\n    byCategory: groupBy('Category'),\n  },\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        288
+      ],
+      "id": "7119e790-74e0-4122-9ea8-7818f63e6ab5",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a sales analyst. Write a short executive summary of this sales report for the management team.\n\nRules:\n- Maximum 120 words.\n- Start with the headline number (total revenue in EGP/currency).\n- Highlight top performing categories and products.\n- Note any notable trends by region or sales channel.\n- Keep the tone professional and concise.\n\nSales Report Data:\n{{ JSON.stringify($json) }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1104,
+        288
+      ],
+      "id": "44889d45-3229-48be-a516-c2dfdafc45c7",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9b384c3e-7bed-4251-8caa-ae7f0839894d",
+              "name": "text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "df0dde5b-bbaa-46c9-8e5d-51ea3a0ca8fa",
+              "name": "text.html",
+              "value": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;\n      line-height: 1.6;\n      color: #1e293b;\n      background-color: #f8fafc;\n      margin: 0;\n      padding: 30px;\n    }\n    .container {\n      max-width: 700px;\n      margin: 0 auto;\n      background: #ffffff;\n      border-radius: 12px;\n      border: 1px solid #e2e8f0;\n      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);\n      overflow: hidden;\n    }\n    .header {\n      background: #0f172a;\n      color: #ffffff;\n      padding: 24px 32px;\n    }\n    .header h1 {\n      margin: 0;\n      font-size: 20px;\n      font-weight: 700;\n    }\n    .header p {\n      margin: 6px 0 0;\n      color: #94a3b8;\n      font-size: 13px;\n    }\n    .content {\n      padding: 32px;\n    }\n    .kpi-grid {\n      display: grid;\n      grid-template-columns: repeat(2, 1fr);\n      gap: 16px;\n      margin-bottom: 24px;\n    }\n    .kpi-card {\n      background: #f1f5f9;\n      border-radius: 8px;\n      padding: 16px;\n    }\n    .kpi-label {\n      font-size: 12px;\n      font-weight: 600;\n      color: #64748b;\n      text-transform: uppercase;\n    }\n    .kpi-value {\n      font-size: 22px;\n      font-weight: 700;\n      color: #0f172a;\n      margin-top: 4px;\n    }\n    .section-title {\n      font-size: 14px;\n      font-weight: 700;\n      text-transform: uppercase;\n      color: #475569;\n      margin: 24px 0 12px;\n      border-bottom: 1px solid #e2e8f0;\n      padding-bottom: 6px;\n    }\n    .summary-box {\n      background-color: #f8fafc;\n      border-left: 4px solid #3b82f6;\n      border-radius: 0 8px 8px 0;\n      padding: 16px 20px;\n      color: #334155;\n      font-size: 14px;\n      line-height: 1.7;\n    }\n    .footer {\n      padding: 16px 32px;\n      background: #f8fafc;\n      border-top: 1px solid #e2e8f0;\n      text-align: center;\n      font-size: 12px;\n      color: #94a3b8;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>Sales Performance Report</h1>\n      <p>Period: {{ $('Code in JavaScript').first().json.from }} to {{ $('Code in JavaScript').first().json.to }} ({{$('Code in JavaScript').first().json.days }} Days)</p>\n    </div>\n    \n    <div class=\"content\">\n      <div class=\"kpi-grid\">\n        <div class=\"kpi-card\">\n          <div class=\"kpi-label\">Total Revenue</div>\n          <div class=\"kpi-value\">EGP {{ $('Code in JavaScript').first().json.revenue.toLocaleString() }}</div>\n        </div>\n        <div class=\"kpi-card\">\n          <div class=\"kpi-label\">Total Orders</div>\n          <div class=\"kpi-value\">{{ $('Code in JavaScript').first().json.orders }}</div>\n        </div>\n        <div class=\"kpi-card\">\n          <div class=\"kpi-label\">Units Sold</div>\n          <div class=\"kpi-value\">{{ $('Code in JavaScript').first().json.units }}</div>\n        </div>\n        <div class=\"kpi-card\">\n          <div class=\"kpi-label\">Average Order Value</div>\n          <div class=\"kpi-value\">EGP {{ $('Code in JavaScript').first().json.averageOrder.toLocaleString() }}</div>\n        </div>\n      </div>\n\n      <div class=\"section-title\">Executive Summary</div>\n      <div class=\"summary-box\">\n        {{ $json.text }}\n      </div>",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1408,
+        288
+      ],
+      "id": "3ace1e86-1d03-4c47-ab61-109c329992be",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        496
+      ],
+      "id": "de1398d9-f8e0-4b9e-b2df-134722a6dae8",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "dB4AyQdhwz0FfgFM",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Report Setting').item.json.sendTo }}",
+        "subject": "Sales Report",
+        "message": "=<div style=\"font-family: Arial, sans-serif; max-width: 650px; color: #333; line-height: 1.6;\">   <h2 style=\"color: #0f172a; border-bottom: 2px solid #3b82f6; padding-bottom: 8px;\">     📊 Sales Performance Report   </h2>      <p>Hello Team,</p>   <p>The sales report for the last <strong>{{ $('Code in JavaScript').first().json.days }} days</strong> has been generated successfully.</p>    <div style=\"background-color: #f1f5f9; border-radius: 8px; padding: 16px; margin: 20px 0;\">     <h3 style=\"margin-top: 0; color: #1e293b; font-size: 16px;\">Key Metrics Summary</h3>     <ul style=\"list-style-type: none; padding-left: 0; margin-bottom: 0;\">       <li style=\"margin-bottom: 8px;\">💰 <strong>Total Revenue:</strong> EGP {{ $('Code in JavaScript').first().json.revenue.toLocaleString() }}</li>       <li style=\"margin-bottom: 8px;\">📦 <strong>Total Orders:</strong> {{ $('Code in JavaScript').first().json.orders }}</li>       <li style=\"margin-bottom: 8px;\">🏷️ <strong>Units Sold:</strong> {{ $('Code in JavaScript').first().json.units }}</li>       <li>📈 <strong>Average Order Value:</strong> EGP {{ $('Code in JavaScript').first().json.averageOrder.toLocaleString() }}</li>     </ul>   </div>    <div style=\"background-color: #ffffff; border-left: 4px solid #3b82f6; padding: 12px 16px; margin: 20px 0; background-color: #f8fafc;\">     <h4 style=\"margin: 0 0 8px 0; color: #0f172a;\">Executive Summary:</h4>     <p style=\"margin: 0; font-size: 14px; color: #475569;\">       {{ $('Edit Fields').first().json.text }}     </p>   </div>    <p style=\"font-size: 13px; color: #64748b; margin-top: 24px;\">     📎 <em>Both full HTML analytical reports are attached to this email.</em>   </p>    <hr style=\"border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;\" />   <p",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "excel"
+              },
+              {
+                "property": "Report"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1968,
+        80
+      ],
+      "id": "263f855d-3cc2-4237-901b-36123f545aa3",
+      "name": "Send a message",
+      "webhookId": "f414de68-64a2-405e-bc28-c6ff28fffd8d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8U6vcJdKIcCaAZOc",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "html",
+        "binaryPropertyName": "Report",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1568,
+        288
+      ],
+      "id": "f3401592-32de-4221-8917-3d8129dd9bff",
+      "name": "Convert to File1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1792,
+        80
+      ],
+      "id": "e80867fa-ab30-4d06-bff8-e66efbd76a4f",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every friday 8am": {
+      "main": [
+        [
+          {
+            "node": "Report Setting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report Request": {
+      "main": [
+        [
+          {
+            "node": "Report Setting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report Setting": {
+      "main": [
+        [
+          {
+            "node": "get order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get order": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Convert to File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "7e9b02dc-f56f-460c-a62e-f51abe392a61",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "60cc8007be45046e43f1c581e26d315f4f6c01a209b4535c2581e0f902db5668"
+  },
+  "nodeGroups": [],
+  "id": "oIsO8TXWl3Y2MX9X",
+  "tags": []
+}
