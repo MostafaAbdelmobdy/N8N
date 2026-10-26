@@ -1,0 +1,659 @@
+{
+  "name": "inovice reader",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9850d522-5dad-4abc-9725-fec234ed6b4b",
+              "leftValue": "={{ $binary.Invoice_File.mimeType }}",
+              "rightValue": "application/pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1008,
+        16
+      ],
+      "id": "cdcc9a06-5ba3-4c93-ba71-9f233de40c3a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Invoice_File",
+        "options": {
+          "keepSource": "both"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -768,
+        -128
+      ],
+      "id": "05ad0310-c3e0-4e41-8340-6777a70ad2b5",
+      "name": "Extract PDF Text"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "84e65c20-d33f-4eff-ab6a-cf5820a2b934",
+              "leftValue": "={{ $json.text.trim().length }}",
+              "rightValue": 50,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -528,
+        -128
+      ],
+      "id": "7f821e06-89c0-4558-9ca9-bb1bcf19cf00",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2edaba50-0982-479b-bf84-516b751d9d5a",
+              "name": "invoiceText",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -320,
+        -240
+      ],
+      "id": "cd9b3a68-7f15-4548-b8b6-c9952bbfae1e",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        96,
+        48
+      ],
+      "id": "4d0c8cf8-25d5-4738-b0bc-fbfc7a97ced7",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "dB4AyQdhwz0FfgFM",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.invoiceText }}",
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"vendor_name\": {\n      \"type\": \"string\",\n      \"description\": \"\"\n    },\n    \"invoice_number\": {\n      \"type\": \"string\"\n    },\n    \"invoice_date\": {\n      \"type\": \"string\",\n      \"description\": \"\"\n    },\n    \"due_date\": {\n      \"type\": \"string\",\n      \"description\": \"\"\n    },\n    \"currency\": {\n      \"type\": \"string\",\n      \"description\": \"\"\n    },\n    \"subtotal\": {\n      \"type\": \"number\"\n    },\n    \"tax\": {\n      \"type\": \"number\"\n    },\n    \"total\": {\n      \"type\": \"number\"\n    },\n    \"line_items\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"description\": {\n            \"type\": \"string\"\n          },\n          \"quantity\": {\n            \"type\": \"number\"\n          },\n          \"unit_price\": {\n            \"type\": \"number\"\n          },\n          \"amount\": {\n            \"type\": \"number\"\n          }\n        }\n      }\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        48,
+        -112
+      ],
+      "id": "7b6ec82c-22eb-4225-a9c2-6e3be297994c",
+      "name": "Extract Invoice Data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5cbf6a64-ed72-4c79-ae7f-233a24e987a0",
+              "name": "Processed At",
+              "value": "={{ $now.toFormat('yyyy-MM-dd HH:mm') }}",
+              "type": "string"
+            },
+            {
+              "id": "dcda0077-e447-4a16-8777-46fd75ced79e",
+              "name": "=File Name",
+              "value": "={{ $('Upload Invoice').first().binary.Invoice_File.fileName }}",
+              "type": "string"
+            },
+            {
+              "id": "5a37ddf1-d53b-4be3-b0af-d809fcc7010b",
+              "name": "Read Method",
+              "value": "=Processed Invoice",
+              "type": "string"
+            },
+            {
+              "id": "f392670f-1f06-430d-ad84-1fdefa871d8e",
+              "name": "=Vendor",
+              "value": "={{ $json.output.vendor_name }}",
+              "type": "string"
+            },
+            {
+              "id": "5ef50508-e2bc-4b90-ae82-0e771664f7b6",
+              "name": "Invoice Number",
+              "value": "={{ $json.output.invoice_number }}",
+              "type": "string"
+            },
+            {
+              "id": "a4a4d88e-c2c0-4bce-b7d9-90abeb821f9c",
+              "name": "Invoice Date",
+              "value": "={{ $json.output.invoice_date }}",
+              "type": "string"
+            },
+            {
+              "id": "cd8d778f-ac7f-4f91-81ce-f01773c6b61a",
+              "name": "=Due Date",
+              "value": "={{ $json.output.due_date }}",
+              "type": "string"
+            },
+            {
+              "id": "cda55749-e6cc-446a-8939-a6947d7d0243",
+              "name": "Currency",
+              "value": "={{ $json.output.currency }}",
+              "type": "string"
+            },
+            {
+              "id": "4fa4f35e-2d2f-433a-971b-0d384c38cae9",
+              "name": "Subtotal",
+              "value": "={{ $json.output.subtotal }}",
+              "type": "string"
+            },
+            {
+              "id": "b2d96706-b3ba-47a2-ad09-c0414060de75",
+              "name": "Tax",
+              "value": "={{ $json.output.tax }}",
+              "type": "string"
+            },
+            {
+              "id": "887cd83c-8ff2-4fb9-b28f-ea03e6746824",
+              "name": "Total",
+              "value": "={{ $json.output.total }}",
+              "type": "string"
+            },
+            {
+              "id": "5c16eb7b-5955-4980-bb83-44032fd6eb71",
+              "name": "Items",
+              "value": "={{ ($json.output.line_items || []).map(i => i.quantity + ' x ' + i.description).join('; ') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        368,
+        -112
+      ],
+      "id": "580e4834-2c3b-4cd9-86b6-cc3b4c2e3e6c",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "resource": "document",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.5-flash-lite",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.5-flash-lite"
+        },
+        "text": "Transcribe all the text in this invoice exactly as written, including the vendor (seller), buyer, invoice number, dates, and every line item (description, quantity, unit price, amount), subtotal, tax, and total. Keep each table row on its own line. Return only the transcribed text.",
+        "inputType": "binary",
+        "binaryPropertyName": "Invoice_File",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        -16
+      ],
+      "id": "a38ebc97-2bc4-4d2f-827e-c4355c133041",
+      "name": "Analyze document",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YItLqVamKs8UEdwZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "07cdb43d-bab3-4e41-8594-db2700aabee7",
+              "name": "invoiceText",
+              "value": "={{ $json.content.parts.map(p => p.text).join('\\n') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -96,
+        48
+      ],
+      "id": "172cfd22-a63b-4cbd-80de-5c7867657ecb",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.1-flash-lite",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.1-flash-lite"
+        },
+        "text": "Transcribe all the text in this invoice exactly as written, including the vendor (seller), buyer, invoice number, dates, and every line item (description, quantity, unit price, amount), subtotal, tax, and total. Keep each table row on its own line. Return only the transcribed text.",
+        "inputType": "binary",
+        "binaryPropertyName": "Invoice_File_1",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -576,
+        192
+      ],
+      "id": "bfe964fd-33b6-44ac-af82-621c128125e6",
+      "name": "Analyze an image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YItLqVamKs8UEdwZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Upload Invoice",
+        "formDescription": "Please upload your invoice document or image here",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Invoice File",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf, .png, .jpg, .jpeg"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -1216,
+        16
+      ],
+      "id": "23e2a072-1eb0-4452-863b-31c28a8140fc",
+      "name": "Upload Invoice",
+      "webhookId": "a72f67fe-9b3b-4eb8-8dd0-54fdf347e46f"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "18n4W6RIYm___wAl245T5mehfIhbZTyMHkwVpi-6xqM4",
+          "mode": "list",
+          "cachedResultName": "Invoices Sheet Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18n4W6RIYm___wAl245T5mehfIhbZTyMHkwVpi-6xqM4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1500739811,
+          "mode": "list",
+          "cachedResultName": "Invoices Sheet Template.csv",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18n4W6RIYm___wAl245T5mehfIhbZTyMHkwVpi-6xqM4/edit#gid=1500739811"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Processed At": "={{ $json['Processed At'] }}",
+            "File Name": "={{ $json['File Name'] }}",
+            "Read Method": "={{ $json['Read Method'] }}",
+            "Vendor": "={{ $json.Vendor }}",
+            "Invoice Number": "={{ $json['Invoice Number'] }}",
+            "Invoice Date": "={{ $json['Invoice Number'] }}",
+            "Due Date": "={{ $json['Invoice Date'] }}",
+            "Currency": "={{ $json.Currency }}",
+            "Subtotal": "={{ $json.Subtotal }}",
+            "Tax": "={{ $json.Tax }}",
+            "Total": "={{ $json.Total }}",
+            "Items": "={{ $json.Items }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Processed At",
+              "displayName": "Processed At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "File Name",
+              "displayName": "File Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Read Method",
+              "displayName": "Read Method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Vendor",
+              "displayName": "Vendor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice Number",
+              "displayName": "Invoice Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice Date",
+              "displayName": "Invoice Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subtotal",
+              "displayName": "Subtotal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tax",
+              "displayName": "Tax",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Items",
+              "displayName": "Items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        576,
+        -112
+      ],
+      "id": "3ba647fb-9d3d-4636-972a-27aded8f19a6",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pYsU4OaieiWxdjhG",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyze an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Text": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyze document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Extract Invoice Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Invoice Data",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Invoice Data": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze document": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Extract Invoice Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze an image": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Invoice": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "166e9431-7140-4332-9bd1-e7fee9c6b6b9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "60cc8007be45046e43f1c581e26d315f4f6c01a209b4535c2581e0f902db5668"
+  },
+  "nodeGroups": [],
+  "id": "Y7cWY4ZDO7oqUjPh",
+  "tags": []
+}
